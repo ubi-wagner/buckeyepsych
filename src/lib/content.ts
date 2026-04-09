@@ -37,12 +37,19 @@ export const DEFAULTS = {
       "2003 — The Ohio State University Department of Psychiatry Outstanding Teacher Award",
       "2002 — Henry Nasrallah Excellence in Psychiatry Medical Student Award",
     ],
+    publications: [
+      "Niedermier, J.A., Bornstein, R., Brandemihl, A. (2006). The Junior Medical Student Psychiatry Clerkship.",
+      "Co-investigator — A randomized, double-blind, placebo-controlled parallel-group study of the efficacy, safety and tolerability of an investigational treatment.",
+      "Oakley, B., Brandemihl, A., Cooper, D., Lau, D., Lawton, A., Zhang, C. (1998). The morphogenesis of mouse vallate gustatory epithelium.",
+      "Zhang, C., Brandemihl, A., Lau, D., Lawton, A., Oakley, B. (1997). BDNF is required for the normal development of taste neurons.",
+    ],
     memberships: [
       "Diplomate, American Board of Psychiatry and Neurology",
       "Member, American Psychiatric Association",
       "Member, Ohio Psychiatric Physician's Association",
       "Member, Dublin, Ohio Chamber of Commerce",
       "Clinical Assistant Professor of Psychiatry, Ohio State University Department of Psychiatry",
+      "Member, Ohio State College of Medicine Admissions Committee",
     ],
   },
   services: {

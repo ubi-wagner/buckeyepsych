@@ -92,6 +92,19 @@ export default async function AboutPage() {
           </section>
           <section>
             <h2 className="mb-3 font-display text-2xl text-brand-900">
+              Publications
+            </h2>
+            <ul className="space-y-3 text-ink/80">
+              {c.about.publications.map((p) => (
+                <li key={p} className="flex gap-3">
+                  <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-brand-500" />
+                  <span className="leading-relaxed">{p}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+          <section>
+            <h2 className="mb-3 font-display text-2xl text-brand-900">
               Memberships
             </h2>
             <ul className="space-y-2 text-ink/80">
