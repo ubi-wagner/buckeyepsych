@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getContent } from "@/lib/content";
+import { MediaImage } from "@/components/MediaImage";
+import MobileMenu from "@/components/MobileMenu";
 
 export default async function Navbar() {
   const content = await getContent();
@@ -8,9 +10,15 @@ export default async function Navbar() {
     <header className="sticky top-0 z-40 border-b border-brand-100/70 bg-cream/85 backdrop-blur-md">
       <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-3 group">
-          <span className="grid h-11 w-11 place-items-center rounded-full bg-brand-800 font-display text-xl text-cream shadow-sm group-hover:bg-brand-900 transition">
-            B
-          </span>
+          <MediaImage
+            slot="site.logo"
+            className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-brand-800 shadow-sm"
+            fallback={
+              <span className="grid h-11 w-11 place-items-center rounded-full bg-brand-800 font-display text-xl text-cream shadow-sm group-hover:bg-brand-900 transition">
+                B
+              </span>
+            }
+          />
           <span className="leading-tight">
             <span className="block font-display text-xl text-brand-950">
               {content.site.name}
@@ -43,6 +51,7 @@ export default async function Navbar() {
         >
           {content.site.phone}
         </a>
+        <MobileMenu phone={content.site.phone} />
       </div>
     </header>
   );

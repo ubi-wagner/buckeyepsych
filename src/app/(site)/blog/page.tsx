@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { publicFileUrl } from "@/lib/storage";
 
 export const metadata = {
   title: "Blog — Buckeye Psychiatry, LLC",
@@ -13,6 +14,7 @@ export default async function BlogIndex() {
     slug: string;
     title: string;
     excerpt: string;
+    coverImage: string | null;
     tags: string[];
     publishedAt: Date | null;
   }[] = [];
@@ -25,6 +27,7 @@ export default async function BlogIndex() {
         slug: true,
         title: true,
         excerpt: true,
+        coverImage: true,
         tags: true,
         publishedAt: true,
       },
@@ -60,7 +63,18 @@ export default async function BlogIndex() {
               href={`/blog/${p.slug}`}
               className="group block overflow-hidden rounded-2xl border border-brand-100 bg-white transition hover:-translate-y-1 hover:shadow-xl"
             >
-              <div className="aspect-[16/10] bg-gradient-to-br from-brand-100 via-brand-300 to-brand-600" />
+              {p.coverImage ? (
+                <div className="aspect-[16/10] overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={publicFileUrl(p.coverImage)}
+                    alt={p.title}
+                    className="h-full w-full object-cover transition group-hover:scale-105"
+                  />
+                </div>
+              ) : (
+                <div className="aspect-[16/10] bg-gradient-to-br from-brand-100 via-brand-300 to-brand-600" />
+              )}
               <div className="p-6">
                 <div className="mb-3 text-xs text-brand-600">
                   {p.publishedAt?.toLocaleDateString("en-US", {

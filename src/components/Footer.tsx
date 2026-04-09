@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getContent } from "@/lib/content";
+import { mapsLink } from "@/components/MapEmbed";
 
 export default async function Footer() {
   const c = await getContent();
@@ -22,7 +23,14 @@ export default async function Footer() {
             Contact
           </div>
           <div className="space-y-1.5 text-sm">
-            <div>{c.site.address}</div>
+            <a
+              className="block hover:text-cream"
+              href={mapsLink(c.site.address)}
+              target="_blank"
+              rel="noopener"
+            >
+              {c.site.address}
+            </a>
             <div>
               <a className="hover:text-cream" href={`tel:${c.site.phone}`}>
                 {c.site.phone}

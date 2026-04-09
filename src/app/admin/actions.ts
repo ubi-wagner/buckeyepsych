@@ -401,6 +401,230 @@ export async function deleteFormAction(id: string) {
 }
 
 // ------------------------------------------------------------------
+// MEDIA (named image slots)
+// ------------------------------------------------------------------
+
+export async function uploadMediaAction(slot: string, formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/admin/login");
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("No file uploaded");
+  }
+  const alt = String(formData.get("alt") || "");
+  const caption = String(formData.get("caption") || "");
+
+  const existing = await prisma.media.findUnique({ where: { slot } });
+  const stored = await saveUpload(file);
+
+  const media = await prisma.media.upsert({
+    where: { slot },
+    create: { slot, fileName: stored.fileName, alt, caption },
+    update: { fileName: stored.fileName, alt, caption },
+  });
+
+  if (existing && existing.fileName !== stored.fileName) {
+    await deleteUpload(existing.fileName);
+  }
+
+  await recordRevision({
+    entityType: "Media",
+    entityId: media.id,
+    data: media,
+    authorId: user.id,
+    authorEmail: user.email,
+    action: existing ? "update" : "create",
+    note: `slot=${slot}`,
+  });
+  revalidatePath("/", "layout");
+}
+
+export async function deleteMediaAction(slot: string) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/admin/login");
+  const existing = await prisma.media.findUnique({ where: { slot } });
+  if (existing) {
+    await deleteUpload(existing.fileName);
+    await prisma.media.delete({ where: { slot } });
+    await recordRevision({
+      entityType: "Media",
+      entityId: existing.id,
+      data: existing,
+      authorId: user.id,
+      authorEmail: user.email,
+      action: "delete",
+      note: `slot=${slot}`,
+    });
+  }
+  revalidatePath("/", "layout");
+}
+
+// ------------------------------------------------------------------
+// STAFF
+// ------------------------------------------------------------------
+
+const staffSchema = z.object({
+  name: z.string().min(1).max(120),
+  title: z.string().max(160).optional().default(""),
+  bio: z.string().max(2000).optional().default(""),
+  order: z.coerce.number().int().default(0),
+});
+
+export async function createStaffAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/admin/login");
+  const parsed = staffSchema.parse({
+    name: formData.get("name"),
+    title: formData.get("title"),
+    bio: formData.get("bio"),
+    order: formData.get("order") || 0,
+  });
+  const file = formData.get("photo");
+  let photoFile: string | null = null;
+  if (file instanceof File && file.size > 0) {
+    const stored = await saveUpload(file);
+    photoFile = stored.fileName;
+  }
+  const staff = await prisma.staff.create({
+    data: {
+      name: parsed.name,
+      title: parsed.title,
+      bio: parsed.bio,
+      order: parsed.order,
+      photoFile,
+      published: true,
+    },
+  });
+  await recordRevision({
+    entityType: "Staff",
+    entityId: staff.id,
+    data: staff,
+    authorId: user.id,
+    authorEmail: user.email,
+    action: "create",
+  });
+  revalidatePath("/about");
+  revalidatePath("/admin/staff");
+}
+
+export async function updateStaffAction(id: string, formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/admin/login");
+  const existing = await prisma.staff.findUnique({ where: { id } });
+  if (!existing) throw new Error("Staff not found");
+  const parsed = staffSchema.parse({
+    name: formData.get("name"),
+    title: formData.get("title"),
+    bio: formData.get("bio"),
+    order: formData.get("order") || 0,
+  });
+  const file = formData.get("photo");
+  let photoFile = existing.photoFile;
+  if (file instanceof File && file.size > 0) {
+    const stored = await saveUpload(file);
+    if (existing.photoFile) await deleteUpload(existing.photoFile);
+    photoFile = stored.fileName;
+  }
+  const staff = await prisma.staff.update({
+    where: { id },
+    data: {
+      name: parsed.name,
+      title: parsed.title,
+      bio: parsed.bio,
+      order: parsed.order,
+      photoFile,
+      published: formData.get("published") !== null,
+    },
+  });
+  await recordRevision({
+    entityType: "Staff",
+    entityId: id,
+    data: staff,
+    authorId: user.id,
+    authorEmail: user.email,
+    action: "update",
+  });
+  revalidatePath("/about");
+  revalidatePath("/admin/staff");
+}
+
+export async function deleteStaffAction(id: string) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/admin/login");
+  const existing = await prisma.staff.findUnique({ where: { id } });
+  if (!existing) return;
+  if (existing.photoFile) await deleteUpload(existing.photoFile);
+  await prisma.staff.delete({ where: { id } });
+  await recordRevision({
+    entityType: "Staff",
+    entityId: id,
+    data: existing,
+    authorId: user.id,
+    authorEmail: user.email,
+    action: "delete",
+  });
+  revalidatePath("/about");
+  revalidatePath("/admin/staff");
+}
+
+// ------------------------------------------------------------------
+// BLOG COVER IMAGE
+// ------------------------------------------------------------------
+
+export async function uploadBlogCoverAction(postId: string, formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/admin/login");
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("No file uploaded");
+  }
+  const existing = await prisma.blogPost.findUnique({ where: { id: postId } });
+  if (!existing) throw new Error("Post not found");
+  const stored = await saveUpload(file);
+  if (existing.coverImage) await deleteUpload(existing.coverImage);
+  const post = await prisma.blogPost.update({
+    where: { id: postId },
+    data: { coverImage: stored.fileName },
+  });
+  await recordRevision({
+    entityType: "BlogPost",
+    entityId: postId,
+    data: post,
+    authorId: user.id,
+    authorEmail: user.email,
+    action: "update",
+    note: "uploaded cover image",
+  });
+  revalidatePath("/blog");
+  revalidatePath(`/blog/${post.slug}`);
+  revalidatePath(`/admin/blog/${postId}`);
+}
+
+export async function deleteBlogCoverAction(postId: string) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/admin/login");
+  const existing = await prisma.blogPost.findUnique({ where: { id: postId } });
+  if (!existing || !existing.coverImage) return;
+  await deleteUpload(existing.coverImage);
+  const post = await prisma.blogPost.update({
+    where: { id: postId },
+    data: { coverImage: null },
+  });
+  await recordRevision({
+    entityType: "BlogPost",
+    entityId: postId,
+    data: post,
+    authorId: user.id,
+    authorEmail: user.email,
+    action: "update",
+    note: "removed cover image",
+  });
+  revalidatePath("/blog");
+  revalidatePath(`/blog/${post.slug}`);
+  revalidatePath(`/admin/blog/${postId}`);
+}
+
+// ------------------------------------------------------------------
 // SITE CONTENT (settings)
 // ------------------------------------------------------------------
 

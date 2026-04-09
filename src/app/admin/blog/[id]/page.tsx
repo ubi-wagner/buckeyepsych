@@ -7,8 +7,11 @@ import {
   publishPostAction,
   unpublishPostAction,
   deletePostAction,
+  uploadBlogCoverAction,
+  deleteBlogCoverAction,
 } from "@/app/admin/actions";
 import { Markdown } from "@/lib/markdown";
+import { publicFileUrl } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +28,8 @@ export default async function EditPostPage({
   const publish = publishPostAction.bind(null, post.id);
   const unpublish = unpublishPostAction.bind(null, post.id);
   const del = deletePostAction.bind(null, post.id);
+  const uploadCover = uploadBlogCoverAction.bind(null, post.id);
+  const deleteCover = deleteBlogCoverAction.bind(null, post.id);
 
   return (
     <div>
@@ -69,6 +74,55 @@ export default async function EditPostPage({
             </form>
           )}
         </div>
+      </div>
+
+      {/* Cover image */}
+      <div className="mb-6 bp-card">
+        <div className="mb-3 font-display text-lg text-brand-950">
+          Cover image
+        </div>
+        {post.coverImage ? (
+          <div className="mb-4 grid gap-4 md:grid-cols-[240px_1fr]">
+            <div className="aspect-[16/10] overflow-hidden rounded-xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={publicFileUrl(post.coverImage)}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div>
+              <p className="text-sm text-ink/60">
+                A cover image is set for this post. Replace it below or remove
+                it to fall back to the gradient placeholder.
+              </p>
+              <form action={deleteCover} className="mt-3">
+                <button className="bp-btn-danger">Remove cover</button>
+              </form>
+            </div>
+          </div>
+        ) : (
+          <p className="mb-4 text-sm text-ink/60">
+            No cover image yet. Upload one below — it will appear on the blog
+            list and at the top of the post.
+          </p>
+        )}
+        <form
+          action={uploadCover}
+          encType="multipart/form-data"
+          className="flex flex-wrap items-end gap-3"
+        >
+          <input
+            type="file"
+            name="file"
+            accept="image/*"
+            required
+            className="block text-sm text-brand-900 file:mr-3 file:rounded-full file:border-0 file:bg-brand-800 file:px-4 file:py-2 file:text-xs file:font-medium file:text-cream hover:file:bg-brand-900"
+          />
+          <button type="submit" className="bp-btn">
+            {post.coverImage ? "Replace cover" : "Upload cover"}
+          </button>
+        </form>
       </div>
 
       <form action={update} className="space-y-5 bp-card">

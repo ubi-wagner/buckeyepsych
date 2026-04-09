@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getContent } from "@/lib/content";
+import { MediaImage } from "@/components/MediaImage";
+import { publicFileUrl } from "@/lib/storage";
 
 export default async function HomePage() {
   const content = await getContent();
@@ -9,6 +11,7 @@ export default async function HomePage() {
     slug: string;
     title: string;
     excerpt: string;
+    coverImage: string | null;
     publishedAt: Date | null;
   }[] = [];
   try {
@@ -21,6 +24,7 @@ export default async function HomePage() {
         slug: true,
         title: true,
         excerpt: true,
+        coverImage: true,
         publishedAt: true,
       },
     });
@@ -78,37 +82,44 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="relative">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-[28px] bg-gradient-to-br from-brand-300 via-brand-500 to-brand-800 shadow-[0_30px_80px_-20px_rgba(10,33,19,0.35)]">
-              <svg
-                className="absolute inset-0 h-full w-full opacity-20 mix-blend-overlay"
-                aria-hidden="true"
-              >
-                <defs>
-                  <pattern
-                    id="grid"
-                    width="32"
-                    height="32"
-                    patternUnits="userSpaceOnUse"
+            <MediaImage
+              slot="home.hero"
+              className="relative aspect-[4/5] overflow-hidden rounded-[28px] shadow-[0_30px_80px_-20px_rgba(10,33,19,0.35)]"
+              alt="Dr. Adam Brandemihl"
+              fallback={
+                <div className="relative aspect-[4/5] overflow-hidden rounded-[28px] bg-gradient-to-br from-brand-300 via-brand-500 to-brand-800 shadow-[0_30px_80px_-20px_rgba(10,33,19,0.35)]">
+                  <svg
+                    className="absolute inset-0 h-full w-full opacity-20 mix-blend-overlay"
+                    aria-hidden="true"
                   >
-                    <path
-                      d="M 32 0 L 0 0 0 32"
-                      fill="none"
-                      stroke="white"
-                      strokeWidth="0.5"
-                    />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#grid)" />
-              </svg>
-              <div className="absolute inset-x-0 bottom-0 p-8 text-cream">
-                <div className="text-[11px] uppercase tracking-[0.2em] opacity-80">
-                  Dr. Adam Brandemihl
+                    <defs>
+                      <pattern
+                        id="grid"
+                        width="32"
+                        height="32"
+                        patternUnits="userSpaceOnUse"
+                      >
+                        <path
+                          d="M 32 0 L 0 0 0 32"
+                          fill="none"
+                          stroke="white"
+                          strokeWidth="0.5"
+                        />
+                      </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#grid)" />
+                  </svg>
+                  <div className="absolute inset-x-0 bottom-0 p-8 text-cream">
+                    <div className="text-[11px] uppercase tracking-[0.2em] opacity-80">
+                      Dr. Adam Brandemihl
+                    </div>
+                    <div className="mt-1 font-display text-2xl leading-tight">
+                      M.D., D.A.B.P.N.
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-1 font-display text-2xl leading-tight">
-                  M.D., D.A.B.P.N.
-                </div>
-              </div>
-            </div>
+              }
+            />
             <div className="absolute -bottom-6 -left-6 rounded-2xl border border-brand-100 bg-cream p-5 shadow-xl">
               <div className="text-[10px] uppercase tracking-wider text-brand-600">
                 Board Certified
@@ -184,7 +195,18 @@ export default async function HomePage() {
                 href={`/blog/${p.slug}`}
                 className="group block overflow-hidden rounded-2xl border border-brand-100 bg-white transition hover:shadow-xl"
               >
-                <div className="aspect-[16/10] bg-gradient-to-br from-brand-100 via-brand-200 to-brand-400" />
+                {p.coverImage ? (
+                  <div className="aspect-[16/10] overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={publicFileUrl(p.coverImage)}
+                      alt={p.title}
+                      className="h-full w-full object-cover transition group-hover:scale-105"
+                    />
+                  </div>
+                ) : (
+                  <div className="aspect-[16/10] bg-gradient-to-br from-brand-100 via-brand-200 to-brand-400" />
+                )}
                 <div className="p-6">
                   <div className="mb-2 text-xs text-brand-600">
                     {p.publishedAt?.toLocaleDateString("en-US", {

@@ -1,4 +1,5 @@
 import { getContent } from "@/lib/content";
+import MapEmbed, { mapsLink } from "@/components/MapEmbed";
 
 export const metadata = {
   title: "Contact — Buckeye Psychiatry, LLC",
@@ -7,6 +8,8 @@ export const metadata = {
 export default async function ContactPage() {
   const c = await getContent();
   const phoneHref = `tel:${c.site.phone.replace(/[^0-9+]/g, "")}`;
+  const mLink = mapsLink(c.site.address);
+
   return (
     <div className="mx-auto max-w-5xl px-6 py-20">
       <div className="mb-16 max-w-3xl">
@@ -26,23 +29,56 @@ export default async function ContactPage() {
           <div className="text-xs font-medium uppercase tracking-wider text-brand-700">
             Office
           </div>
-          <div className="mt-2 whitespace-pre-line font-display text-xl text-brand-950">
-            {c.site.address}
-          </div>
           <a
-            href={phoneHref}
-            className="mt-6 inline-flex items-center rounded-full bg-brand-800 px-6 py-3 text-sm font-medium text-cream hover:bg-brand-900"
+            href={mLink}
+            target="_blank"
+            rel="noopener"
+            className="mt-2 block whitespace-pre-line font-display text-xl text-brand-950 hover:text-brand-700"
           >
-            Call {c.site.phone}
+            {c.site.address}
           </a>
-          {c.site.email && (
+          <div className="mt-6 flex flex-wrap gap-3">
             <a
-              href={`mailto:${c.site.email}`}
-              className="ml-2 mt-6 inline-flex items-center rounded-full border border-brand-200 px-6 py-3 text-sm font-medium text-brand-900 hover:bg-brand-50"
+              href={phoneHref}
+              className="inline-flex items-center rounded-full bg-brand-800 px-6 py-3 text-sm font-medium text-cream hover:bg-brand-900"
             >
-              Email
+              Call {c.site.phone}
             </a>
-          )}
+            <a
+              href={mLink}
+              target="_blank"
+              rel="noopener"
+              className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-6 py-3 text-sm font-medium text-brand-900 hover:bg-brand-50"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              Open in Maps
+            </a>
+            {c.site.email && (
+              <a
+                href={`mailto:${c.site.email}`}
+                className="inline-flex items-center rounded-full border border-brand-200 px-6 py-3 text-sm font-medium text-brand-900 hover:bg-brand-50"
+              >
+                Email
+              </a>
+            )}
+          </div>
         </div>
         <div className="rounded-2xl border border-brand-100 bg-white p-8">
           <div className="text-xs font-medium uppercase tracking-wider text-brand-700">
@@ -60,7 +96,11 @@ export default async function ContactPage() {
         </div>
       </div>
 
-      <div className="mt-16 rounded-2xl border border-brand-100 bg-brand-50/40 p-8">
+      <div className="mt-12">
+        <MapEmbed address={c.site.address} />
+      </div>
+
+      <div className="mt-12 rounded-2xl border border-brand-100 bg-brand-50/40 p-8">
         <div className="text-xs font-medium uppercase tracking-wider text-brand-700">
           Hours
         </div>

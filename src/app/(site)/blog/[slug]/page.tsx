@@ -3,8 +3,35 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { Markdown } from "@/lib/markdown";
 import { getCurrentUser } from "@/lib/session";
+import { publicFileUrl } from "@/lib/storage";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  try {
+    const post = await prisma.blogPost.findUnique({
+      where: { slug: params.slug },
+      select: { title: true, excerpt: true, coverImage: true },
+    });
+    if (!post) return { title: "Not found — Buckeye Psychiatry, LLC" };
+    return {
+      title: `${post.title} — Buckeye Psychiatry, LLC`,
+      description: post.excerpt,
+      openGraph: {
+        title: post.title,
+        description: post.excerpt,
+        images: post.coverImage ? [publicFileUrl(post.coverImage)] : undefined,
+      },
+    };
+  } catch {
+    return { title: "Buckeye Psychiatry, LLC" };
+  }
+}
 
 export default async function BlogPostPage({
   params,
@@ -62,6 +89,16 @@ export default async function BlogPostPage({
               {t}
             </span>
           ))}
+        </div>
+      )}
+      {post.coverImage && (
+        <div className="mt-10 aspect-[16/9] overflow-hidden rounded-2xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={publicFileUrl(post.coverImage)}
+            alt={post.title}
+            className="h-full w-full object-cover"
+          />
         </div>
       )}
       <div className="mt-12 border-t border-brand-100 pt-10">
