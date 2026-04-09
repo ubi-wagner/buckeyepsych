@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/session";
+import { LEGACY_POSTS } from "@/lib/legacyPosts";
+import { importLegacyPostsAction } from "@/app/admin/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +11,11 @@ export default async function BlogListPage() {
   const posts = await prisma.blogPost.findMany({
     orderBy: [{ updatedAt: "desc" }],
   });
+  const legacySlugs = new Set(LEGACY_POSTS.map((p) => p.slug));
+  const importedLegacyCount = posts.filter((p) =>
+    legacySlugs.has(p.slug)
+  ).length;
+  const remainingLegacyCount = LEGACY_POSTS.length - importedLegacyCount;
   return (
     <div>
       <div className="mb-8 flex items-end justify-between">
@@ -20,9 +27,19 @@ export default async function BlogListPage() {
             Blog posts
           </h1>
         </div>
-        <Link href="/admin/blog/new" className="bp-btn">
-          New post
-        </Link>
+        <div className="flex gap-2">
+          {remainingLegacyCount > 0 && (
+            <form action={importLegacyPostsAction}>
+              <button type="submit" className="bp-btn-ghost">
+                Import {remainingLegacyCount} legacy{" "}
+                {remainingLegacyCount === 1 ? "post" : "posts"}
+              </button>
+            </form>
+          )}
+          <Link href="/admin/blog/new" className="bp-btn">
+            New post
+          </Link>
+        </div>
       </div>
 
       {posts.length === 0 ? (

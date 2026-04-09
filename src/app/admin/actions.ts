@@ -11,6 +11,7 @@ import { getSession, getCurrentUser } from "@/lib/session";
 import { saveUpload, deleteUpload } from "@/lib/storage";
 import { recordRevision } from "@/lib/revision";
 import { setContent, type ContentKey } from "@/lib/content";
+import { LEGACY_POSTS } from "@/lib/legacyPosts";
 
 // ------------------------------------------------------------------
 // AUTH
@@ -197,9 +198,16 @@ export async function updatePostAction(id: string, formData: FormData) {
 export async function publishPostAction(id: string) {
   const user = await getCurrentUser();
   if (!user) redirect("/admin/login");
+  const existing = await prisma.blogPost.findUnique({ where: { id } });
+  if (!existing) throw new Error("Post not found");
+  // Preserve the original publishedAt if it was set previously (e.g. legacy
+  // imports). Only stamp NOW for posts that have never been published.
   const post = await prisma.blogPost.update({
     where: { id },
-    data: { published: true, publishedAt: new Date() },
+    data: {
+      published: true,
+      publishedAt: existing.publishedAt ?? new Date(),
+    },
   });
   await recordRevision({
     entityType: "BlogPost",
@@ -212,6 +220,39 @@ export async function publishPostAction(id: string) {
   revalidatePath("/blog");
   revalidatePath(`/blog/${post.slug}`);
   revalidatePath("/admin/blog");
+}
+
+export async function importLegacyPostsAction() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/admin/login");
+  for (const lp of LEGACY_POSTS) {
+    const exists = await prisma.blogPost.findUnique({
+      where: { slug: lp.slug },
+    });
+    if (exists) continue;
+    const created = await prisma.blogPost.create({
+      data: {
+        slug: lp.slug,
+        title: lp.title,
+        excerpt: lp.excerpt,
+        content: lp.content,
+        tags: lp.tags,
+        published: false,
+        publishedAt: new Date(lp.publishedAt),
+      },
+    });
+    await recordRevision({
+      entityType: "BlogPost",
+      entityId: created.id,
+      data: created,
+      authorId: user.id,
+      authorEmail: user.email,
+      action: "create",
+      note: "imported from legacy WordPress blog",
+    });
+  }
+  revalidatePath("/admin/blog");
+  revalidatePath("/blog");
 }
 
 export async function unpublishPostAction(id: string) {
